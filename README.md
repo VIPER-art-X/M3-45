@@ -6,6 +6,8 @@
 
 #### - Paste the data into the M3-45 and press PREVIEW for a temp .xmind file being opened OR press Export to create a file directly.
 
+#### If you don't want to use AI for data making then you can use the 'Manual' method with the app.
+
 
 ## Skill You need to Develop
 
@@ -34,3 +36,12 @@ Step 5: Add 21: 17x = 29
 Step 6: Divide by 17: x = 29/17 ≈ 1.706
 Check: (7×29/17−3)/(4×29/17+1) = (203/17−51/17)/(116/17+17/17) = (152/17)/(133/17) = 152/133 = 8/7 ✓
 Answer: x = 29/17 ≈ 1.71"}</pre>
+
+
+## My reccomendation
+
+#### Use deepseek-AI for data making.
+
+#### First create a mindmap with deepseek then copy that mindmap to the deepseek chat where you uploaded the prompt along with instructions.
+
+#### 
