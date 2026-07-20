@@ -8,11 +8,11 @@
 
 #### - Run the .exe in M3-45/dist
 
-#### - Use the prompts to any AI to create data that has Addresses at start.
+#### - Use the prompts on any AI to create data that has Addresses at start.
 
-#### - Paste the data into the M3-45 and press PREVIEW for a temp .xmind file being opened OR press Export to create a file directly.
+#### - Paste the data into the M3-45 and press PREVIEW for a temp .xmind file being opened for specific time OR press Export to create a file directly with the defualt name being what is the node name at lvl1[1].
 
-#### - If you don't want to use AI for data making then you can use the 'Manual' method with the app.
+#### - If you don't want to use AI for data making then you can use the 'Manual' method within the app.
 
 #### - Address(lvl1[1]lvl2[13]lvl3[40]) + Content(Node name{note:"  ", label:"  ") = Condress data.
 
@@ -45,10 +45,8 @@ Check: (7×29/17−3)/(4×29/17+1) = (203/17−51/17)/(116/17+17/17) = (152/17)/
 Answer: x = 29/17 ≈ 1.71"}</pre>
 
 
-## My reccomendation
+## My reccomendations for using AI
 
-#### Use deepseek-AI for data making.
+#### Use deepseek-AI for Condress data making.
 
-#### First create a mindmap with deepseek then copy that mindmap to the deepseek chat where you uploaded the prompt along with instructions.
-
-#### 
+#### First create a mindmap with deepseek then copy that same mindmap to the deepseek chat where you have already uploaded the prompt along with instructions.
