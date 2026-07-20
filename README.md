@@ -1,3 +1,9 @@
+## Requirements
+
+#### - It can only work in PC only but you can make the Condress data anywhere.
+
+
+
 ## Usage
 
 #### - Run the .exe in M3-45/dist
@@ -12,7 +18,7 @@
 
 ## Skill You need to Develop
 
-#### - After giving AI the prompt, Tell the AI what you want by guiding it what you want at node name and how the note should look like.
+#### - After giving AI the prompt, Tell the AI what you want by guiding it what you want at node name and how the note should look like. The prompts have only one way of filling the node name and note but you can make more ways by telling the AI.
 
 #### Examples
 
