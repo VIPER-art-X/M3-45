@@ -13,7 +13,7 @@
 
 #### Examples
 
-#### 1. Here i tell the AI to have node as a word, note to have its meaning along with a sentence.
+#### 1. Here i tell the AI to have node as a word and note to have its meaning along with a sentence.
 <pre>lvl1[1]lvl2[13]lvl3[40]Marvel{note:"v. To be filled with wonder or astonishment; n. a wonderful or surprising person or thing.
 Example: 'Visitors marvel at the beauty of the Grand Canyon every year.'"}</pre>
 
