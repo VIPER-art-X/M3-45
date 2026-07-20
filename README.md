@@ -6,8 +6,9 @@
 
 #### - Paste the data into the M3-45 and press PREVIEW for a temp .xmind file being opened OR press Export to create a file directly.
 
-#### If you don't want to use AI for data making then you can use the 'Manual' method with the app.
+#### - If you don't want to use AI for data making then you can use the 'Manual' method with the app.
 
+#### - Address(lvl1[1]lvl2[13]lvl3[40]) + Content(Node name{note:"  ", label:"  ") = Condress data.
 
 ## Skill You need to Develop
 
