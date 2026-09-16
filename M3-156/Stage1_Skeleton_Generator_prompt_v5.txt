@@ -1,0 +1,449 @@
+# LEARNING MIND MAP SKELETON — Tab-Hierarchy Generator (STAGE 1) [v5]
+
+> **v5 changelog (adds Rule 4.5 — READ THIS FIRST):** New **RULE 4.5: NODE NAME DISCIPLINE — IMAGE-MATCHING (IFM) AWARENESS**, between naming standards (Rule 4) and structural consistency (Rule 5). The downstream IFM/Automatic Search pipeline fetches one image per node by searching that node's name, and already auto-disambiguates a repeated name by prefixing it with the parent's name (then grandparent, etc. as needed) until the search term is unique. This version makes sure the skeleton cooperates with that mechanism instead of fighting it: recurring archetype/category names (`Diagnosis`, `Comparison`, ...) are left bare rather than pre-qualified with an ancestor's name baked in, true duplicate siblings are never left in, and name collisions the automatic rescue can't cleanly resolve (same name AND same parent name elsewhere in the tree) are caught and given more specific names instead. New checklist Part G and task step 5.5 make this mandatory before finishing.
+
+## WHAT THIS PROMPT IS FOR
+
+This is a **two-stage pipeline**, and this prompt is **Stage 1 only**.
+
+- **Stage 1 (THIS prompt):** Given a subject, field, or topic, output ONLY the **skeleton** — every node name, arranged as a deep hierarchy using **tab indentation**. No notes. No equations. No explanations. Just names, correctly nested.
+- **Stage 2 (a separate prompt, M3-87, run in a DIFFERENT chat):** Takes the finished Stage-1 skeleton and, node by node, converts it into the `lvlN[I]Title{note:"...", equation:"..."}` export format, filling in notes, equations, and detail for each node that Stage 1 already named.
+
+**Your job in this chat is Stage 1 ONLY.** Never write `lvl1[1]`-style markers, never write a `note:`, `equation:`, or any `{...}` block, never add explanatory prose describing a node — that content belongs to Stage 2, in the other chat, later. If you add it here, Stage 2 has nothing left to do and the two-stage split breaks down.
+
+---
+
+## ⛔ THE CORE PROBLEM THIS PROMPT EXISTS TO FIX
+
+Mind maps built in one shot tend to fail in a specific, predictable way: the AI gets lazy about the hierarchy and honest about the hierarchy, and instead **stuffs multiple distinct facts into one node's name**, using commas and parentheses as a substitute for actually branching the tree. The result LOOKS like a mind map but is really a shallow, bloated list wearing a mind-map costume.
+
+**Real example of the failure (this is an actual node name from a prior output):**
+```
+Trichophyton (Tinea corporis, pedis, cruris, unguium)
+```
+This single node is secretly **five separate facts** — the organism, plus four distinct diseases it causes — flattened into one line. Because they were never split, the tree never grew a level here, and the map ends up looking "deep" in places while actually being wide and shallow everywhere it matters.
+
+**Another real example:**
+```
+Candida albicans (Thrush, vulvovaginitis, esophagitis, septicemia, germ tube positive)
+```
+That is **one node name hiding six facts**: the organism, four distinct clinical presentations, and a diagnostic feature. None of those six ideas are the same idea, so they cannot share one node.
+
+**This is the single most important thing this prompt exists to prevent.** Everything below serves that goal.
+
+---
+
+## OUTPUT FORMAT
+
+1. **One node per line.**
+2. **Indentation = depth.** Use exactly one **tab character** per level of depth below the root. The root has zero tabs, its children have one tab, their children have two tabs, and so on.
+3. **A line contains ONLY the node's name.** Plain text. No numbering, no bullets, no dashes, no parenthetical asides, no `lvlN[I]` markers, no `{...}` overrides, no notes.
+4. **No blank lines between nodes.** The tree is one continuous indented block.
+5. **Wrap the entire output in a single fenced code block** (triple backticks, no language tag) so it has a copy button and pastes cleanly with its tab characters intact.
+6. **Do not explain the tree, do not add commentary before or after the code block.** Output the skeleton and stop.
+
+**Example shape (topic: "Citrus"):**
+```
+Citrus
+	Sweet Citrus
+		Orange
+			Navel Orange
+			Valencia Orange
+		Mandarin
+	Sour Citrus
+		Lemon
+		Lime
+		Grapefruit
+```
+
+---
+
+## ⛔ RULE 1 (MOST IMPORTANT): ONE NODE = ONE ATOMIC IDEA, ALWAYS
+
+Before writing any node name, ask: **"Is this actually more than one thing?"**
+
+A node name is broken and must be split if it contains any of these tells:
+- **A comma-separated list** of two or more items (diseases, examples, types, symptoms, dates, names...): `Trichophyton (Tinea corporis, pedis, cruris, unguium)` → the organism is one node, each disease is its own child.
+- **Parenthetical content that is itself a list, a definition, a mechanism, or a second fact**, not just a short one-or-two-word disambiguator. `Histoplasma capsulatum (Ohio/Mississippi valleys, intracellular macrophages)` is hiding a geography fact AND a mechanism fact — both deserve their own child node under `Histoplasma capsulatum`.
+- **"and" / "or" joining two nameable things**: `Chlamydospores and Arthrospores` → two sibling nodes.
+- **A colon or dash followed by an explanation**: `Lac Operon: Inducible, catabolite repression by cAMP-CAP` → `Lac Operon` is the node; `Inducible`, `Catabolite Repression (cAMP-CAP)` become its children.
+
+**A parenthetical is allowed to stay in the title ONLY when it is a single short disambiguator with no internal list** — e.g. `Malaria (Plasmodium)` or `TB (Mycobacterium tuberculosis)` used as a plain alias, not when it's smuggling in extra facts. When in doubt, split it out into a child instead of leaving it in parentheses.
+
+**Worked correction (using the real Mycology example):**
+
+❌ **WRONG (flat, cramming, this is the failure mode):**
+```
+Opportunistic Mycoses (Immunocompromised hosts)
+	Candida albicans (Thrush, vulvovaginitis, esophagitis, septicemia, germ tube positive)
+	Aspergillus fumigatus (Allergic sinusitis, aspergilloma, invasive aspergillosis)
+```
+
+✅ **CORRECT (every distinct fact gets its own branch):**
+```
+Opportunistic Mycoses
+	Host Context
+		Immunocompromised Hosts
+	Candida albicans
+		Clinical Presentations
+			Thrush
+			Vulvovaginitis
+			Esophagitis
+			Septicemia
+		Diagnostic Features
+			Germ Tube Test
+	Aspergillus fumigatus
+		Clinical Presentations
+			Allergic Sinusitis
+			Aspergilloma
+			Invasive Aspergillosis
+```
+Notice depth went from 2 levels to 4-5 levels for the exact same information — nothing was added, it was just un-flattened. This is what "deep" actually means in this format: not padding, but refusing to let two facts share one node.
+
+---
+
+## RULE 2: THE STANDARD LEARNING SCHEMA (adapt per subject, don't force it rigidly)
+
+For hierarchies meant for **learning** a field, subject, or topic, this is the default backbone — use it as a starting skeleton of levels, then apply Rule 1 underneath every level so it actually gets deep instead of stalling:
+
+```
+Field / Subject                      (root)
+	Major Branch / Domain             (e.g. Mycology, Virology, Bacteriology)
+		Chapter / Category             (e.g. Medically Important Fungi)
+			Topic / Subcategory          (e.g. Systemic Dimorphic Mycoses)
+				Specific Item              (e.g. Histoplasma capsulatum)
+					Attribute Group          (e.g. Clinical Presentation, Mechanism, Diagnosis)
+						Individual Fact        (e.g. Ohio/Mississippi valleys)
+```
+
+This is a **guide, not a cage** — some subjects need more layers (a "Type" layer between Topic and Specific Item; a "Subtype" layer under an Attribute Group when there are sub-facts within a fact), some need fewer near the top (a narrow topic request might start straight at "Chapter" level rather than a whole "Field"). The one rule that never bends is Rule 1: whatever layers you use, no single node may hide more than one atomic fact.
+
+**How to decide the grouping label for an "Attribute Group" layer:** look at what kinds of facts keep recurring under similar nodes in this subject, and name the group after that recurring kind — `Clinical Presentations`, `Mechanism of Action`, `Diagnostic Features`, `Causes`, `Types`, `Examples`, `Historical Context`, `Variants`, `Stages`, `Related Conditions`, etc. This is exactly the kind of field-agnostic "recurring aspect schema" idea — derive it from the subject rather than forcing one template onto every field.
+
+**⛔ Two things that look like a hierarchy step but are NOT — check every parent-child link against this:**
+- **A sibling relationship is not a child relationship.** If two named things are both instances of the same kind of thing (two species of hookworm, two strains of a virus, two drugs in a class), they are **siblings under a shared parent**, never one nested inside the other. `Necator americanus` is not a child of `Ancylostoma duodenale` just because they cause the same disease — both are children of `Hookworm` (or of `Causative Agents`, plural). Before nesting B under A, ask: "is B a property/example belonging to A specifically, or is B just another thing of the same kind as A?" — the second case is always a sibling, never a child.
+- **A slash, semicolon, or "or" joining two names is cramming, exactly like a comma is.** `Coccidioides immitis / Coccidioides posadasii` is two organisms wearing one node — split it into two children of a plural parent (`Causative Agents`), the same way Rule 1 already treats commas and "and".
+
+---
+
+## RULE 2.5: ARCHETYPE-DRIVEN EXPLANATORY SCAFFOLDING (add the branches a textbook would add)
+
+Raw source material (an encyclopedia entry, a dataset, a list of facts) usually only tells you what's directly stated. But a hierarchy built **for learning** needs more than that — it needs the scaffolding a textbook or study guide adds on top of the raw facts to make sure nothing is left as an open question in the learner's head: symptoms and diagnosis for a disease even if the source only mentioned its cause; onset and interactions for a drug even if the source only named it; a worked example or real-world application for a formula even if the source only gave the equation.
+
+**Your job is to recognize what KIND of thing a node represents (its "archetype") and make sure its standard, expected branches exist underneath it — adding them yourself when the source material didn't spell them out, not just when it did.**
+
+This does not mean inventing false facts — where you don't have enough information to fill in a genuinely accurate answer for a branch, still create the node (so Stage 2 knows to research and fill it), rather than skipping the branch because today's source text happened not to mention it.
+
+**Common archetypes and their expected branches** (use these as a checklist, not a rigid template — skip any branch that's genuinely not applicable, and add branches beyond this list whenever the subject calls for it):
+
+| Archetype | Recognize it by | Expected branches to check for / add |
+|---|---|---|
+| **Disease / Clinical Condition** | A named illness, syndrome, or disorder | Risk Factors, Signs & Symptoms, Diagnosis, Differential Diagnosis, Treatment/Management, Complications, Prognosis, Prevention |
+| **Organism / Pathogen** | A species, genus, or microbe | Morphology/Classification, Virulence/Pathogenic Mechanism, Transmission, Associated Conditions, Laboratory Identification, Treatment/Susceptibility |
+| **Drug / Therapeutic Agent** | A named medication or drug class | Mechanism of Action, Indications, Dosing & Onset of Action, Pharmacokinetics, Adverse Effects, Contraindications, Drug Interactions |
+| **Process / Mechanism / Pathway** | A biological, chemical, or physical process (e.g. glycolysis, an immune response, a reaction mechanism) | Stages/Steps, Key Molecules or Agents Involved, Regulation/Control, Real-World or Clinical Significance, Common Misconceptions |
+| **Formula / Equation / Physical Law** | A named law, equation, or quantitative relationship (physics, chemistry, math) | Variable Definitions, Derivation or Physical Origin, Worked Example, Real-World Application, Limiting Cases / Edge Conditions, Common Misconceptions |
+| **Historical Event / Theory / Concept** | A discovery, historical episode, or abstract theory | Historical Context, Key Contributors/Evidence, Modern Relevance or Application, Common Misconceptions |
+| **Sibling Group (Comparison-worthy)** | Two or more sibling nodes that are the same *kind* of thing and commonly get confused or contrasted (Gram-positive vs Gram-negative cell walls, two drugs in the same class, two species in the same genus, two disease subtypes, two theories addressing the same problem) | A `Comparison` node under their **shared parent** (a sibling to the group, not a child of any one of them), placeholder-populated with the dimensions worth contrasting (e.g. `Structural Differences`, `Clinical Differences`, `Mechanism Differences`) |
+
+**Comparison nodes are structural, not prose — this is still Stage 1.** You are not writing the comparison here, only guaranteeing a labeled slot exists so Stage 2 is forced to write one. Do not describe the actual differences (no "thicker in Gram-positive" text) — just name the node (`Comparison`) and, if useful, a shallow breakdown of what should be compared (`Cell Wall Thickness`, `Outer Membrane Presence`, `Stain Retention`) as its children, still as bare labels.
+
+**How to spot a comparison-worthy sibling group while drafting:** after writing 2+ sibling nodes, pause and ask "would a student mixing these two up be a common, predictable mistake?" or "does a textbook on this subject always contrast these two side by side?" (Gram-positive/negative, aerobic/anaerobic, first-gen/second-gen drugs, competitive/noncompetitive inhibition...). If yes, add the `Comparison` node as an additional sibling to the group, nested one level up under the parent they share — never nested inside one member of the group, since a comparison belongs to neither one alone.
+
+**How to apply this while drafting:** for every node you write, briefly ask "does this node match one of these archetypes (or an obvious variant of one for this field)?" If yes, before moving to the next node, check whether the standard branches for that archetype exist underneath it — if a branch is missing and would genuinely apply, add a placeholder child node for it (even one word, e.g. `Diagnosis`, `Drug Interactions`, `Worked Example`) so Stage 2 knows to research and fill it in. Do not add a branch that plainly does not apply (a virus doesn't need "Dosing"; a historical event doesn't need "Pharmacokinetics").
+
+This list is a starting point, not exhaustive — the same instinct applies to any field: think about what a good textbook chapter on this exact node would include that a bare fact-list wouldn't, and add that as a branch.
+
+**Worked example — a disease node, source material vs. properly scaffolded:**
+
+❌ **Source-only (misses what a learner needs):**
+```
+Tuberculosis
+	Causative Agent
+		Mycobacterium tuberculosis
+	Pathogenesis
+		Granuloma Formation
+```
+
+✅ **Archetype-scaffolded (adds the textbook branches even though the source didn't state them):**
+```
+Tuberculosis
+	Causative Agent
+		Mycobacterium tuberculosis
+	Pathogenesis
+		Granuloma Formation
+		Caseous Necrosis
+	Risk Factors
+	Signs and Symptoms
+	Diagnosis
+	Differential Diagnosis
+	Treatment
+	Complications
+	Prognosis
+	Prevention
+```
+(The empty-looking branches above are placeholders for Stage 2 to research and populate — they exist here to guarantee Stage 2 doesn't skip them, which is exactly the "notes get skipped" failure this whole pipeline is trying to prevent one stage earlier.)
+
+**Worked example — a comparison-worthy sibling group, before/after:**
+
+❌ **Missing the comparison slot (siblings just sit there uncontrasted):**
+```
+Cell Wall
+	Gram-Positive Cell Wall
+		Thick Peptidoglycan Layer
+		Teichoic Acids
+	Gram-Negative Cell Wall
+		Thin Peptidoglycan Layer
+		Outer Membrane
+```
+
+✅ **Comparison node added as a shared sibling (still just labels, no prose):**
+```
+Cell Wall
+	Gram-Positive Cell Wall
+		Thick Peptidoglycan Layer
+		Teichoic Acids
+	Gram-Negative Cell Wall
+		Thin Peptidoglycan Layer
+		Outer Membrane
+	Comparison
+		Cell Wall Thickness
+		Outer Membrane Presence
+		Gram Stain Result
+		Endotoxin Presence
+```
+Notice `Comparison` sits under `Cell Wall`, as a sibling to both variants, not tucked under either one — because the contrast belongs to both of them jointly.
+
+---
+
+## RULE 2.75: SIBLING BRANCH PARITY — EVERY MAJOR SUB-FIELD GETS THE SAME FOUNDATIONAL TREATMENT AS ITS SIBLINGS
+
+**This is Rule 1's "one node = one idea" discipline applied one level up, to entire branches instead of single nodes.** When a subject splits into multiple major sibling sub-fields (e.g. `Microbiology` → `Bacteriology`, `Virology`, `Mycology`, `Parasitology`, `Immunology`), each of those siblings is doing the same *job* in the tree — introducing one branch of the parent subject — and each one owes the reader the same category of foundational content before it dives into specific named instances (species, drugs, diseases). If three of the four give the reader a "how this group of organisms/agents is built and classified" layer first and the fourth jumps straight to a list of named organisms, that fourth branch is incomplete relative to its own siblings, even if every individual node inside it is correctly atomized.
+
+**Real example of this failure (an actual gap from a prior output):**
+```
+Microbiology
+	Bacteriology
+		Bacterial Structure and Physiology     ← foundational layer present
+		Bacterial Growth and Metabolism        ← foundational layer present
+		Bacterial Genetics                     ← foundational layer present
+		Medically Important Bacteria           ← THEN specific organisms
+	Virology
+		Viral Structure and Classification     ← foundational layer present
+		Viral Replication                      ← foundational layer present
+		Medically Important Viruses            ← THEN specific organisms
+	Mycology
+		Fungal Structure and Classification    ← foundational layer present
+		Fungal Reproduction                    ← foundational layer present
+		Medically Important Fungi              ← THEN specific organisms
+	Parasitology
+		Helminths (Worms)                      ← ⛔ jumps straight to organism groups,
+			Nematodes                             no foundational layer at all
+				Enterobius vermicularis
+		Protozoa
+			Entamoeba histolytica
+```
+Parasitology has no equivalent to "Structure and Classification" or "Growth and Metabolism" — it just starts listing worm and protozoan species. A learner gets no answer to "what makes something a parasite," "how are parasites classified," "what are the general types of life cycle / transmission a parasite can have" — questions the other three siblings all answer for their own group before naming a single species.
+
+**Corrected — Parasitology given the same category of foundational layer its siblings have (adapted to what's actually true of this field, not copy-pasted):**
+```
+Parasitology
+	General Parasitology
+		Host-Parasite Relationships
+			Definitive Host
+			Intermediate Host
+			Reservoir Host
+			Vector
+		Classification of Parasites
+			Ectoparasites
+			Endoparasites
+		Life Cycle Patterns
+			Direct Life Cycle
+			Indirect Life Cycle
+		Modes of Transmission
+			Fecal-Oral
+			Vector-Borne
+			Ingestion of Infected Tissue
+	Helminths (Worms)
+		Nematodes
+			Enterobius vermicularis
+	Protozoa
+		Entamoeba histolytica
+```
+Nothing about the organism-by-organism content changed — the fix is purely that the branch now opens with the same *kind* of foundational layer its siblings already have, adapted to what's actually true of parasites (life cycle patterns and host types, not "growth phases" or "replication cycle," because those aren't the right foundational concepts for this group).
+
+**How to apply this while drafting:**
+1. Whenever you write 2+ sibling branches that are all instances of the same *kind* of thing (sub-fields of one subject, categories of one classification, drug classes under one system), pause once all of them are drafted and compare their top-level shape side by side.
+2. For each one, ask: "does this branch open with foundational/general content (structure, classification, general mechanisms, general lifecycle) before it names specific individual instances?" If most siblings do and one doesn't, that one is missing a branch — go add it, using content genuinely appropriate to that specific sub-field (don't force-fit another sibling's exact layer names onto it).
+3. This is not about forcing identical branch *names* across siblings — Virology needs "Replication," Parasitology needs "Life Cycle Patterns," Immunology needs neither. It is about making sure each sibling gets *some* genuinely-fitting foundational layer of equivalent depth and purpose, not that all siblings look identical.
+
+---
+
+## RULE 2.8: IF YOU HAVE SEARCH — USE IT TO VERIFY A-TO-Z COVERAGE BEFORE FINALIZING
+
+**Do not draft a broad subject's skeleton from memory alone and assume it's complete.** For anything at the "chapter," "full subject," or "full field" scope (see Rule 3's scope table), memory is a good first draft but an unreliable completeness check — it's exactly how an entire foundational branch (see Rule 2.75) or an entire major topic can go quietly missing without ever looking wrong from the inside.
+
+**Before finalizing a broad-scope skeleton, if you have web search available, use it to check your top-level and second-level branch list against real reference sources:**
+- Search for the standard table of contents of a well-regarded textbook in this subject (e.g. "medical parasitology textbook table of contents", "microbiology course syllabus outline"), or a standard curriculum/board-exam content outline if one exists for this field.
+- Compare that list against your drafted top-level and second-level branches. Any major chapter/topic present in multiple independent real sources but absent from your draft is a gap — add it (as a full branch built with Rule 1/2/2.5, not just a bare label).
+- This check is specifically aimed at catching **missing branches**, not verifying every individual fact — Rule 2.5's archetype scaffolding and Rule 2.75's sibling parity check handle depth and consistency once the branch list itself is complete. Use search to answer "did I forget an entire topic," not to fact-check every leaf.
+- If search isn't available in this session, do the same comparison from your own knowledge of how the subject is conventionally organized (its standard textbook chapter breakdown) instead — the goal (a full, non-partial branch list) doesn't change, only the method of verifying it does.
+
+---
+
+## RULE 3: DEPTH TARGETS
+
+Depth is a *consequence* of following Rule 1 faithfully, not a separate padding exercise — but as a floor:
+
+| Request scope | Minimum depth (levels from root) |
+|---|---|
+| A single narrow topic (e.g. "the Krebs Cycle") | 5 |
+| A chapter or unit (e.g. "Mycology") | 6 |
+| A full subject (e.g. "Microbiology") | 7, and most branches should go to 8+ |
+| A full field spanning multiple subjects | 8, with core branches reaching 9-10 |
+
+If, while drafting, a whole branch of the tree tops out 2+ levels shallower than the target and the sibling branches around it don't, that branch almost certainly still has crammed nodes in it — go back and apply Rule 1 again before moving on. Shallow-but-correct is rare; shallow is almost always a sign of skipped splitting, not a sign the branch was simple.
+
+---
+
+## RULE 4: NAMING STANDARDS FOR EACH NODE
+
+- **Short.** A node name should read like a label, not a sentence. If you cannot say it in roughly 1-6 words, it is very likely hiding a second fact that belongs one level down (re-check against Rule 1).
+- **No restating the parent.** A child should not just repeat its parent's name with one word added and nothing else distinguishing it (`Fungi` → `Types of Fungi` → `Fungus Types` is circular padding, not depth).
+- **No bare, empty category nodes.** Every node you write must have either at least one child (if it's a grouping node) or be a genuine leaf fact (if it's terminal). Don't create a grouping node "for structure" if you're not going to populate it.
+- **Consistent grammatical form among siblings.** If one child under "Clinical Presentations" is a noun phrase ("Thrush"), all its siblings should be noun phrases too, not a mix of noun phrases and full sentences.
+- **Use proper scientific/technical names exactly as known** (correct spelling, capitalization, italicizable binomial names written plainly since this is plain text) — Stage 2 will build equations and notes assuming Stage 1's names are accurate.
+
+---
+
+## RULE 4.5: NODE NAME DISCIPLINE — IMAGE-MATCHING (IFM) AWARENESS
+
+**Why this matters even at the skeleton stage:** Stage 2 will fill in your names with notes and equations, but the names themselves are what a later, separate automated step (the IFM/Automatic Search pipeline) uses to fetch one picture per node — it searches Google Images for each node's **name, exactly as written**. That pipeline already has a built-in rescue for a name that isn't unique: it prefixes the name with its parent's name, and if that's still not enough (the parent's name repeats too), it climbs to the grandparent, then great-grandparent, and so on, until the combined phrase is unique or it runs out of ancestors. Your job here isn't to run that search — it's to draft a skeleton whose names cooperate with that rescue instead of defeating it.
+
+**What this means while drafting:**
+
+1. **A recurring category/archetype name across different branches is expected and correct — leave it bare.** Rule 2.5's scaffold names (`Diagnosis`, `Treatment`, `Comparison`, `Mechanism of Action`, `Risk Factors`, `Signs and Symptoms`, `Clinical Presentations`, ...) are *meant* to repeat once per Disease/Drug/Organism-type node — that's exactly the case the parent-prefix rescue exists to handle. **Never pre-qualify one of these yourself** by folding the ancestor into the name (writing `Tuberculosis Diagnosis` as the node name instead of nesting a plain `Diagnosis` under `Tuberculosis`) — doing so duplicates what the image pipeline already does automatically later, and it also violates Rule 4's "short label" standard by turning a clean one-or-two-word name into a compound phrase.
+2. **Never give two children of the same parent the identical name.** Unlike case 1 (same name, different parents — always fine), a real duplicate sibling is always a drafting mistake: either a leftover repeated line, or two facts that were never actually the same thing and need distinct names. The Atomicity Checklist (Part A) already has you scanning parent-child links for mis-nesting; while you're there, also scan sibling groups for literal duplicate names and fix any you find.
+3. **Watch for a name that collides with an unrelated node's name where the parent names ALSO collide.** That's the one case the automatic rescue can't cleanly resolve in a single step — it has to keep climbing the tree, or settle while the two are still ambiguous. In a hand-built skeleton this almost always means one of two things: an accidental duplicate branch (case 2, one level removed), or a sibling group named too generically for its context (two unrelated `Type 1` / `Type 2` pairs instead of each using its own items' real names). Fix it by making the colliding names more specific and concrete, not by leaving it for the ancestor-prefix chain to sort out.
+4. **Name leaf-level facts concretely, not generically.** A leaf that states one specific fact (a named symptom, drug, organism, structure, date) should be named for that fact (`Night Sweats`, not `Symptom`) rather than a bare category word — a concrete name is both less likely to accidentally collide with an unrelated node elsewhere in a large tree, and makes for a far more accurate image search on its own. Save generic names (`Overview`, `Definition`, `Types`, `Examples`, the Rule 2.5 archetype labels) for genuine grouping/category nodes, where recurrence-plus-parent-prefix (point 1) is exactly the intended behavior.
+
+---
+
+## RULE 5: STRUCTURAL CONSISTENCY (tabs behave like the old lvl-marker rules, simplified)
+
+- **Depth increases by exactly one tab at a time going down** — never jump from 2 tabs to 4 tabs in consecutive lines.
+- **A node's siblings are all lines with the same tab count that share the same nearest shallower-tab ancestor.** Going back up to add a new branch just means writing a line with fewer tabs than the line before it — you don't need to repeat anything (unlike the lvl-marker format, tabs alone encode the whole path).
+- **Never use spaces to fake indentation.** Only real tab characters count as one level; mixing spaces in will misalign the hierarchy when it's pasted elsewhere.
+
+---
+
+## ⛔ SKELETON VERIFICATION CHECKLIST (run this on your ENTIRE output before finishing)
+
+**A — Atomicity Checklist (the most important pass, do this one twice):**
+- [ ] Scan every single node name for a comma. If found, could that comma be separating two facts instead of being part of one name (e.g. "St. Louis, Missouri" is fine; "Thrush, vulvovaginitis" is not)? If it's separating facts, split them into children.
+- [ ] Scan every node name for parentheses. Is the parenthetical content a single short disambiguator, or is it a second fact, a list, or a mechanism? If the latter, pull it out into its own child node(s).
+- [ ] Scan for "and" / "or" / "/" joining two nameable things inside one node name. Split them into children of a plural parent.
+- [ ] Scan for a colon or dash followed by descriptive content inside a node name. Split the description into children.
+- [ ] Scan every parent-child link: is the child actually a property of the parent, or is it really a sibling (another instance of the same kind of thing) that got mistakenly nested instead? Move any misnested siblings up to share the correct parent.
+
+**B — Depth Checklist:**
+- [ ] Compare the deepest point in each major branch against the Rule 3 target for this request's scope.
+- [ ] Any branch that falls short — re-open it and look for un-split (crammed) nodes; that's almost always the cause.
+
+**C — Format Checklist:**
+- [ ] Every line uses only tabs for indentation, never spaces.
+- [ ] Depth never jumps by more than one tab between a line and the line above it.
+- [ ] No `note:`, `equation:`, `{`, `}`, `lvl`, numbering, or bullet characters appear anywhere in the output — this is Stage 2's job, not this stage's.
+- [ ] The whole thing is inside one fenced code block, and nothing else (no preamble, no summary) sits outside that block.
+
+**D — Explanatory Scaffolding Checklist (Rule 2.5):**
+- [ ] For every node matching a Disease/Condition archetype: Risk Factors, Signs & Symptoms, Diagnosis, Treatment, Complications, Prognosis, Prevention are present (or genuinely not applicable).
+- [ ] For every node matching a Drug archetype: Mechanism, Indications, Dosing/Onset, Adverse Effects, Interactions, Contraindications are present (or genuinely not applicable).
+- [ ] For every node matching a Process/Mechanism or Formula/Equation archetype: a Real-World Application / Worked Example / Significance branch is present, not just the raw mechanics.
+- [ ] No archetype branch was added that plainly doesn't fit the node (don't force "Dosing" onto a virus, or "Pharmacokinetics" onto a historical event).
+
+**E — Comparison Coverage Checklist (Rule 2.5, Sibling Groups):**
+- [ ] Scan every set of 2+ sibling nodes of the same kind (species, drug-class members, disease subtypes, competing theories, structural variants). For each set, is a `Comparison` node present as their shared sibling?
+- [ ] Every `Comparison` node sits one level up, under the parent the compared items share — never nested inside one of the items being compared.
+- [ ] No `Comparison` node was added for a sibling group that isn't actually confusable or contrast-worthy (don't force a comparison between two unrelated leaf facts just because they're siblings).
+
+**F — Sibling Branch Parity & Coverage Checklist (Rule 2.75, Rule 2.8):**
+- [ ] List every set of major sibling branches that represent the same kind of thing (sub-fields of one subject, categories of one classification). For each set, does every sibling open with a genuinely-fitting foundational/general layer before naming specific instances, matching the depth and purpose (not the literal names) of what its siblings have?
+- [ ] For chapter/subject/field-scope requests: was the branch list checked against a real external source (search, if available) or, at minimum, deliberately compared against the subject's standard textbook chapter breakdown from memory? Was anything missing added as a full branch, not a bare label?
+
+**G — Node Name / IFM Disambiguation Checklist (Rule 4.5):**
+- [ ] No two children of the same parent share an identical name. Any true duplicate sibling found is fixed (renamed or removed), not left in.
+- [ ] No archetype/category name (Rule 2.5) was pre-qualified with its ancestor's name baked into the text (e.g. no `Tuberculosis Diagnosis` node name — it should just be `Diagnosis`, nested under `Tuberculosis`).
+- [ ] For every name that repeats elsewhere in the tree, its parent's name is distinct from the parent's name of the other occurrence(s). If two occurrences share both the same name AND the same parent name, that pair is re-examined: it's fixed as either a duplicate-branch mistake or a too-generic leaf/sibling name, not left for a longer ancestor chain to sort out.
+- [ ] Leaf nodes stating a specific fact are named for that fact concretely, not with a bare generic label that a sibling group elsewhere in the tree could just as easily collide with.
+
+---
+
+## WORKED FULL EXAMPLE — before/after on real content
+
+**Input request:** "Give me a learning skeleton for the Fungal Reproduction section of Mycology."
+
+**Old-style flattened output (WRONG — this is the failure this prompt fixes):**
+```
+Fungal Reproduction
+	Asexual Reproduction (Mitotic spores)
+		Conidia (Macroconidia, Microconidia)
+		Sporangiospores
+		Arthrospores
+		Chlamydospores
+	Sexual Reproduction (Meiotic spores)
+		Zygomycota (Zygospores)
+		Ascomycota (Ascospores in sacs)
+		Basidiomycota (Basidiospores on club-shaped basidia)
+		Deuteromycota (Imperfect fungi, no known sexual stage)
+```
+
+**Correct Stage-1 skeleton (RIGHT — every fact gets its own node, depth follows naturally):**
+```
+Fungal Reproduction
+	Asexual Reproduction
+		Spore Type
+			Mitotic Spores
+		Spore Forms
+			Conidia
+				Macroconidia
+				Microconidia
+			Sporangiospores
+			Arthrospores
+			Chlamydospores
+	Sexual Reproduction
+		Spore Type
+			Meiotic Spores
+		Fungal Phyla
+			Zygomycota
+				Zygospores
+			Ascomycota
+				Ascospores
+					Formed in Sacs (Asci)
+			Basidiomycota
+				Basidiospores
+					Formed on Basidia
+						Club-Shaped Structure
+			Deuteromycota
+				Imperfect Fungi
+					No Known Sexual Stage
+```
+
+---
+
+## YOUR TASK
+
+When the user names a field, subject, chapter, or topic (however narrow or broad):
+
+1. Determine the scope (single topic / chapter / full subject / full field) and its Rule 3 depth target.
+2. Draft the tree using the Rule 2 schema as a loose backbone. For chapter/subject/field scope, if search is available, check the top-level and second-level branch list against a real reference source (Rule 2.8) before treating the branch list as final.
+3. Apply Rule 1 relentlessly to every node as you go — do not wait until the end to fix cramming; do it live, node by node. Also check every parent-child link as you make it: is this really a property, or a mis-nested sibling?
+4. For every node, check Rule 2.5 — does it match a known archetype, and if so, are its expected branches present? Add placeholder branches Stage 2 will need to fill, even where the source material was silent. For every group of 2+ same-kind siblings, add a shared `Comparison` node so Stage 2 is forced to contrast them instead of describing each in isolation.
+5. Once all major sibling branches are drafted, run Rule 2.75: compare them side by side and confirm each one opens with its own genuinely-fitting foundational layer before naming specific instances — add the missing layer to any sibling that skipped straight to specifics.
+5.5. Apply Rule 4.5 as you name nodes: leave recurring archetype/category names bare (don't pre-qualify them with an ancestor's name), never let two children of the same parent share a name, and give concrete leaf facts concrete names rather than generic ones.
+6. Run the full Skeleton Verification Checklist (Parts A, B, C, D, E, F, G) before finishing.
+7. Output **ONLY** the tab-indented skeleton in a single fenced code block. No notes, no equations, no `lvl` markers, no commentary before or after.
+
+The result is meant to be pasted, as-is, into a separate chat running the Stage 2 (M3-87) prompt, which will then walk this exact skeleton node by node and attach notes, equations, and labels to each name you produced here.
+
+Now generate the skeleton the user requested.
