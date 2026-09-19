@@ -1,0 +1,229 @@
+==============================================================================
+M3-165 SETUP GUIDE  --  running the .py directly AND building the .exe
+==============================================================================
+Project folder used in this guide:  F:\XMIND TTS SYSTEM\M3-165
+Files that must be in that folder:  M3-165.py  and  cyber_mask_icon.ico
+
+
+------------------------------------------------------------------------------
+QUICK SUMMARY (the one thing that is confusing)
+------------------------------------------------------------------------------
+There are TWO different places Chromium can live, and each way of running the
+app needs its own copy:
+
+  Running M3-165.py directly   -> Chromium in  %LOCALAPPDATA%\ms-playwright
+                                  (the default place "playwright install" uses)
+
+  Running the built .exe       -> Chromium bundled INSIDE the exe's folder.
+                                  To get it there you must install it with
+                                  set PLAYWRIGHT_BROWSERS_PATH=0
+                                  BEFORE building. (Section B, step 2)
+
+The two copies do not affect each other. Having both costs about 300 MB of
+extra disk space.
+
+The saved login profile is shared by both (see Section C).
+
+
+==============================================================================
+SECTION A -- RUNNING THE .PY FILE DIRECTLY
+==============================================================================
+
+A1. Install the Python package (one time)
+      pip install playwright
+
+    Also make sure the other libraries the script imports are installed
+    (only install what is missing):
+      pip install pillow matplotlib psutil fonttools
+
+A2. Install the browser (one time)
+      playwright install chromium
+
+    "pip install playwright" only installs the Python package. The browser
+    is a separate download, and this command puts it in:
+      C:\Users\<you>\AppData\Local\ms-playwright
+    (same as %LOCALAPPDATA%\ms-playwright)
+
+A3. Run the app
+      cd /d "F:\XMIND TTS SYSTEM\M3-165"
+      python M3-165.py
+
+A4. Log in (optional, only needed for sites that require it)
+    Scroll to the very bottom of the RIGHT panel and click
+    "Browser Login Setup". See Section D.
+
+
+==============================================================================
+SECTION B -- BUILDING AND RUNNING THE .EXE
+==============================================================================
+
+B1. Open cmd in the project folder
+      cd /d "F:\XMIND TTS SYSTEM\M3-165"
+
+    Check that M3-165.py (the version with the Browser Login Setup button)
+    and cyber_mask_icon.ico, or any other icon, are both in this folder.
+
+B2. Install Chromium INSIDE the Playwright package (this is the key step)
+    Run these two commands in the SAME cmd window, one after the other:
+
+      set PLAYWRIGHT_BROWSERS_PATH=0
+      playwright install chromium
+
+    Setting the variable to 0 makes Playwright install the browsers into:
+      ...\Python312\Lib\site-packages\playwright\driver\package\.local-browsers
+    which is where PyInstaller can pick them up and bundle them into the exe.
+
+    Notes:
+      - "set" only lasts for that one cmd window. Open a new window and it is
+        gone (you do not need it for the build itself, only for this install).
+      - In PowerShell the equivalent is:
+          $env:PLAYWRIGHT_BROWSERS_PATH="0"
+          playwright install chromium
+      - You should see chromium-XXXX, chromium_headless_shell-XXXX, ffmpeg and
+        winldd download into that .local-browsers folder.
+      - This does NOT touch the copy in %LOCALAPPDATA%\ms-playwright, so
+        running the raw .py keeps working exactly as before.
+
+B3. Clean up old build leftovers
+    Delete these if they exist (old ones can reuse stale settings or override
+    the icon):
+      - the  build  folder
+      - the  dist   folder
+      - any  .spec  file (for example M3-165.spec)
+
+B4. Build the exe
+      pyinstaller --clean --onedir --windowed --collect-all playwright --icon="F:\XMIND TTS SYSTEM\M3-165\cyber_mask_icon.ico" --add-data "F:\XMIND TTS SYSTEM\M3-165\cyber_mask_icon.ico;." M3-165.py
+
+    What each part does:
+      --clean            ignore cached build data
+      --onedir           output a folder (fast startup). Do NOT use --onefile:
+                         it unpacks ~300 MB to a temp folder on every launch
+                         and starts very slowly.
+      --windowed         no black console window
+      --collect-all playwright
+                         bundles the whole Playwright package, including the
+                         Chromium you installed in step B2
+      --icon=...         icon of the .exe file itself
+      --add-data "...;." copies the .ico into the app so the window/taskbar
+                         icon can load it (the script does this with
+                         root.iconbitmap)
+
+    The script already contains the code that points the exe at its bundled
+    browser (it only runs inside the built exe, never for the raw .py):
+      - sets PLAYWRIGHT_BROWSERS_PATH to the bundled .local-browsers folder
+      - loads the window icon from the bundled .ico
+
+B5. Run the exe
+    The app is in:
+      F:\XMIND TTS SYSTEM\M3-165\dist\M3-165\M3-165.exe
+
+    - Run it from INSIDE that folder. Keep the whole M3-165 folder together
+      (the exe needs the _internal folder next to it).
+    - To move it to another PC, zip the whole dist\M3-165 folder (or wrap it
+      in an installer such as Inno Setup).
+    - Right after the build, copy the folder somewhere else if Windows still
+      shows an old icon (Windows caches icons by file path).
+
+B6. Log in (optional)
+    Open the app, scroll to the bottom of the right panel and click
+    "Browser Login Setup". See Section D.
+
+
+==============================================================================
+SECTION C -- THE SAVED PROFILE FOLDER (shared by .py and .exe)
+==============================================================================
+Location:
+  C:\Users\<you>\.webpage_image_extractor
+
+Created automatically the first time it is needed (by the login button or by
+the mini browser). Inside:
+  chromium_profile        saved logins, cookies, consent/CAPTCHA state
+  chromium_profile_fetch  profile for the blocked-download fallback
+  (plus run logs)
+
+- The .py and the .exe both use this SAME folder, because it is built from
+  your user home folder. A login saved in one shows up in the other.
+- Chromium locks a profile while it is open, so do not run the .py's login
+  browser and the exe's login browser at the same time.
+- Deleting the folder is safe: the app will not crash and it is recreated
+  automatically. You just lose saved logins and cookies, so run
+  Browser Login Setup again afterwards. Close the app and any Chromium
+  windows before deleting.
+- To move your logins to another PC, copy chromium_profile to the same place
+  in that PC's user folder. That PC still needs its own Chromium (Section A2
+  for the .py, or just use the exe which carries its own).
+
+
+==============================================================================
+SECTION D -- USING THE "BROWSER LOGIN SETUP" BUTTON
+==============================================================================
+Location: very bottom of the right panel, under "Strip Properties".
+
+1. Click "Browser Login Setup". A normal browser window opens on the saved
+   profile (it uses your installed Google Chrome if found, otherwise the
+   bundled Chromium).
+2. It loads a Google Images page. Accept Google's cookie/consent banner.
+3. Log into Pinterest or any site that needs it. (A Google account login is
+   not needed for image search.)
+4. Just CLOSE the browser window when you are done. Nothing else to click.
+5. The app trims cache/history and keeps your cookies and logins. A "Done"
+   message appears, and the mini browser uses that saved session from then on.
+
+If it says it couldn't launch a browser: close the mini browser (or any other
+login window) and try again, or check that Chromium is installed
+(Section A2 for the .py; for the exe re-do Section B).
+
+
+==============================================================================
+TROUBLESHOOTING
+==============================================================================
+
+"Chromium isn't installed for Playwright -- run: playwright install chromium"
+(with a path inside _MEIxxxx\playwright\driver\package\.local-browsers)
+  -> The exe was built without the bundled browser. Redo Section B in order:
+     set PLAYWRIGHT_BROWSERS_PATH=0 -> playwright install chromium ->
+     delete build/dist/.spec -> rebuild.
+
+The exe starts very slowly
+  -> You used --onefile. Rebuild with --onedir (Section B4). If the first
+     launch is still slow, test by adding the dist folder to Windows Defender
+     exclusions.
+
+Icon problems
+  - The file must be a real .ico (not a renamed .png).
+  - Delete the old .spec file; it can override --icon.
+  - Use the full path to the .ico in the command.
+  - Copy the exe folder somewhere else to bypass Windows' icon cache.
+  - The exe file icon (--icon) and the window/taskbar icon (the script's
+    iconbitmap + --add-data) are two separate things; you need both.
+
+Updated Playwright with pip?
+  -> The browser folder name is tied to the Playwright version (for example
+     chromium-1234). After "pip install --upgrade playwright", redo
+     Section A2 (for the .py) and Section B2-B4 (for the exe).
+
+Where does each Chromium live?
+  Raw .py : %LOCALAPPDATA%\ms-playwright
+  Build   : ...\Python312\Lib\site-packages\playwright\driver\package\.local-browsers
+  Built exe: inside dist\M3-165\_internal\playwright\driver\package\.local-browsers
+  Profile : C:\Users\<you>\.webpage_image_extractor  (shared by all of them)
+
+
+==============================================================================
+CHECKLISTS
+==============================================================================
+
+Run the .py  (first time)
+  [ ] pip install playwright (+ pillow matplotlib psutil fonttools if missing)
+  [ ] playwright install chromium
+  [ ] python M3-165.py
+  [ ] Browser Login Setup -> log in -> close the window
+
+Build and run the exe
+  [ ] cd /d "F:\XMIND TTS SYSTEM\M3-165"
+  [ ] set PLAYWRIGHT_BROWSERS_PATH=0
+  [ ] playwright install chromium
+  [ ] delete build, dist, and any .spec file
+  [ ] run the pyinstaller command from B4
+  [ ] open dist\M3-165\M3-165.exe
+  [ ] Browser Login Setup -> log in -> close the window
