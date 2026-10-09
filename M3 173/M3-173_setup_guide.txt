@@ -1,0 +1,327 @@
+==============================================================================
+M3-173 SETUP GUIDE  --  running the .py directly AND building the .exe
+==============================================================================
+Project folder used in this guide:  F:\XMIND TTS SYSTEM\M3-173
+Files that must be in that folder:  M3-173.py  and  cyber_mask_icon.ico
+
+
+------------------------------------------------------------------------------
+QUICK SUMMARY (the one thing that is confusing)
+------------------------------------------------------------------------------
+There are TWO different places Chromium can live, and each way of running the
+app needs its own copy:
+
+  Running M3-173.py directly   -> Chromium in  %LOCALAPPDATA%\ms-playwright
+                                  (the default place "playwright install" uses)
+
+  Running the built .exe       -> Chromium bundled INSIDE the exe's folder.
+                                  To get it there you must install it with
+                                  set PLAYWRIGHT_BROWSERS_PATH=0
+                                  BEFORE building. (Section B, step 2)
+
+The two copies do not affect each other. Having both costs about 300 MB of
+extra disk space.
+
+The saved browser profiles are shared by both (see Section C).
+
+
+==============================================================================
+SECTION A -- RUNNING THE .PY FILE DIRECTLY
+==============================================================================
+
+A1. Install the Python package (one time)
+      pip install playwright
+
+    Also make sure the other libraries the script imports are installed
+    (only install what is missing):
+      pip install pillow matplotlib psutil fonttools
+
+    (psutil is optional but strongly recommended: it lets the app force-kill
+    leftover Chromium processes. Without it, stray browsers can pile up
+    during long Automatic Search runs.)
+
+A2. Install the browser (one time)
+      playwright install chromium
+
+    "pip install playwright" only installs the Python package. The browser
+    is a separate download, and this command puts it in:
+      C:\Users\<you>\AppData\Local\ms-playwright
+    (same as %LOCALAPPDATA%\ms-playwright)
+
+A3. Run the app
+      cd /d "F:\XMIND TTS SYSTEM\M3-173"
+      python M3-173.py
+
+A4. Log in (optional, only needed for sites that require it)
+    Scroll to the very bottom of the RIGHT panel and click
+    "Browser Profiles". See Section D.
+
+
+==============================================================================
+SECTION B -- BUILDING AND RUNNING THE .EXE
+==============================================================================
+
+B1. Open cmd in the project folder
+      cd /d "F:\XMIND TTS SYSTEM\M3-173"
+
+    Check that M3-173.py and cyber_mask_icon.ico (or any other icon) are
+    both in this folder.
+
+B2. Install Chromium INSIDE the Playwright package (this is the key step)
+    Run these two commands in the SAME cmd window, one after the other:
+
+      set PLAYWRIGHT_BROWSERS_PATH=0
+      playwright install chromium
+
+    Setting the variable to 0 makes Playwright install the browsers into:
+      ...\Python312\Lib\site-packages\playwright\driver\package\.local-browsers
+    which is where PyInstaller can pick them up and bundle them into the exe.
+
+    Notes:
+      - "set" only lasts for that one cmd window. Open a new window and it is
+        gone (you do not need it for the build itself, only for this install).
+      - In PowerShell the equivalent is:
+          $env:PLAYWRIGHT_BROWSERS_PATH="0"
+          playwright install chromium
+      - You should see chromium-XXXX, chromium_headless_shell-XXXX, ffmpeg and
+        winldd download into that .local-browsers folder.
+      - This does NOT touch the copy in %LOCALAPPDATA%\ms-playwright, so
+        running the raw .py keeps working exactly as before.
+
+B3. Clean up old build leftovers
+    Delete these if they exist (old ones can reuse stale settings or override
+    the icon):
+      - the  build  folder
+      - the  dist   folder
+      - any  .spec  file (for example M3-173.spec)
+
+B4. Build the exe
+      pyinstaller --clean --onedir --windowed --collect-all playwright --icon="F:\XMIND TTS SYSTEM\M3-173\cyber_mask_icon.ico" --add-data "F:\XMIND TTS SYSTEM\M3-173\cyber_mask_icon.ico;." M3-173.py
+
+    What each part does:
+      --clean            ignore cached build data
+      --onedir           output a folder (fast startup, and NO temp extraction
+                         on launch). Do NOT use --onefile: it unpacks ~300 MB
+                         into %TEMP% (a _MEIxxxxx folder) on every launch,
+                         starts very slowly, and leaves that folder behind if
+                         the app is force-killed.
+      --windowed         no black console window
+      --collect-all playwright
+                         bundles the whole Playwright package, including the
+                         Chromium you installed in step B2
+      --icon=...         icon of the .exe file itself
+      --add-data "...;." copies the .ico into the app so the window/taskbar
+                         icon can load it
+
+    !! IMPORTANT -- CHECK THIS BEFORE BUILDING !!
+    The older M3-165 guide said the script already contains code that
+    (1) points the exe at its bundled browser (sets PLAYWRIGHT_BROWSERS_PATH
+    to the bundled .local-browsers folder when running frozen) and
+    (2) loads the window icon with root.iconbitmap.
+    The M3-173.py file in this project does NOT contain either piece of code
+    (main() only does the cleanup sweeps and starts the window). If you build
+    the exe as-is, it will look for Chromium in %LOCALAPPDATA%\ms-playwright
+    instead of the bundled copy, and the window/taskbar icon will not be set.
+    Either add those two bits back to M3-173.py before building, or ask for
+    them to be added.
+
+B5. Run the exe
+    The app is in:
+      F:\XMIND TTS SYSTEM\M3-173\dist\M3-173\M3-173.exe
+
+    - Run it from INSIDE that folder. Keep the whole M3-173 folder together
+      (the exe needs the _internal folder next to it).
+    - To move it to another PC, zip the whole dist\M3-173 folder (or wrap it
+      in an installer such as Inno Setup).
+    - Right after the build, copy the folder somewhere else if Windows still
+      shows an old icon (Windows caches icons by file path).
+
+B6. Log in (optional)
+    Open the app, scroll to the bottom of the right panel and click
+    "Browser Profiles". See Section D.
+
+
+==============================================================================
+SECTION C -- THE SAVED PROFILE FOLDER (shared by .py and .exe)
+==============================================================================
+Location:
+  C:\Users\<you>\.webpage_image_extractor
+
+Created automatically the first time it is needed. Inside:
+  chromium_profile          the "Default" saved profile (logins, cookies,
+                            consent/CAPTCHA state)
+  chromium_profile_fetch    profile for the blocked-download fallback
+  profiles\                 extra profiles ("Profile 2", "Profile 3", ...)
+                            created from the Browser Profiles window, each
+                            with its own browser folder + login snapshot
+  deepseek_profiles\        account folders made by browser_login_setup.py
+                            (shown as "Account 1", "Account 2", ... in the
+                            Search profile list)
+  search_state.json         Default profile's login snapshot used by
+                            Automatic Search
+  active_search_profile.txt which profile is currently selected
+  ifm_auto_search_logs\     one .txt log per IFM Automatic Search run
+  gfm_auto_search_logs\     one .txt log per GFM Automatic Search run
+
+- The .py and the .exe both use this SAME folder, because it is built from
+  your user home folder. A login saved in one shows up in the other.
+- Chromium locks a profile while it is open, so do not open the same profile
+  in two browsers at once (the app refuses to, and tells you why).
+- The saved profiles are NOT temp files and are never deleted automatically.
+  Deleting the folder is safe: the app recreates it. You just lose saved
+  logins and cookies. Close the app and any Chromium windows before deleting.
+  Single profiles can be deleted from inside the app (Browser Profiles ->
+  Delete Selected).
+- The .txt run logs are also never deleted automatically (they are kept on
+  purpose so you can send them for debugging). Delete old ones by hand if they
+  pile up.
+- To move your logins to another PC, copy chromium_profile to the same place
+  in that PC's user folder. That PC still needs its own Chromium (Section A2
+  for the .py, or just use the exe which carries its own).
+
+
+==============================================================================
+SECTION D -- USING THE "BROWSER PROFILES" BUTTON
+==============================================================================
+(This replaces the old "Browser Login Setup" button. That button does not
+exist in M3-173. Standalone login scripting is done by the separate
+browser_login_setup.py, if you use it.)
+
+Location: very bottom of the right panel, under "Strip Properties".
+
+1. Click "Browser Profiles". A window lists every profile: Default,
+   Headless, any "Account N", "Profile N", and any "Custom: ..." folders.
+2. Create New Profile  -> makes the next free "Profile N".
+3. Open Browser (surf) -> opens a normal visible browser on the selected
+   profile. Accept Google's consent banner and/or log into Pinterest or any
+   site. Wait a few seconds, then close the window. The profile's cookies are
+   saved every few seconds so Automatic Search can use the login.
+4. Use for Search      -> makes the selected profile the active one (same as
+   the "Search profile" drop-down in the IFM section).
+5. Delete Selected     -> deletes a "Profile N" completely. For an "Account N"
+   it logs that account out (asks first). For a "Custom:" folder it only
+   removes it from the list; YOUR folder is never deleted. Default cannot be
+   deleted.
+6. "Headless" is a temporary, account-free profile: nothing is saved, and its
+   temporary folder is deleted automatically when its browser closes.
+
+If it says it couldn't open the browser: close any other window using that
+profile and try again, or check that Chromium is installed (Section A2 for
+the .py; for the exe re-do Section B).
+
+
+==============================================================================
+SECTION E -- WHAT THE APP WRITES TO %TEMP% AND WHAT GETS DELETED
+==============================================================================
+%TEMP% is usually C:\Users\<you>\AppData\Local\Temp.
+Short answer: on a NORMAL exit the app removes almost everything it created.
+After a crash, force-kill (Task Manager), or power loss, some folders are
+left behind. Details:
+
+1. Preview files   mindmap_preview_<id>.xmind
+   Deleted automatically after the "Auto-delete in ..." timer (default 30 s,
+   retried a few times if the viewer still has the file open), AND on app
+   exit, AND any old ones are swept at the next startup.  -> fully automatic.
+
+2. Search/download image folders
+   xmind_imgsearch_*   (Search Images dialogs, F-Node and IFM)
+   xmind_gfmsearch_*   (Search GIFs dialogs)
+   xmind_ifm_autosearch_*   (IFM Automatic Search downloads)
+   xmind_gfm_autosearch_*   (GFM Automatic Search downloads)
+   Deleted when you press that section's  X  (clear) button, and all
+   remaining ones are deleted when the app exits normally.
+   NOT deleted if the app is killed or crashes, and there is NO startup sweep
+   for these. This is also why "Load & Resume" can recover an interrupted run:
+   the downloaded files are still sitting there. Delete leftovers by hand:
+   in Explorer type %temp% and delete everything named xmind_*.
+   IMPORTANT: images placed in an exported/previewed .xmind are copied INTO
+   that file, so deleting these temp folders never breaks an exported map.
+
+3. Playwright browser temp   playwright-chromiumdev-profile-*  and
+   playwright-artifacts-*
+   Playwright removes them when a browser closes normally. At every startup
+   the app also deletes any that are older than 1 hour.  -> automatic.
+
+4. Headless profile folders   wie_headless_<pid>\  and wie_headless_surf_*
+   Deleted when that browser closes and again on exit.  -> automatic.
+
+5. Chromium processes
+   Not files, but related: the app tags each Automatic Search browser, force
+   -kills any that fail to close (needs psutil), and at startup kills orphaned
+   headless browsers from earlier sessions.
+
+6. Built exe only: if you ever use --onefile, PyInstaller extracts to
+   %TEMP%\_MEIxxxxx. It is removed on a normal exit but left behind if the
+   exe is force-killed. The recommended --onedir build does not do this.
+
+Not in %TEMP% (and never auto-deleted): the .webpage_image_extractor folder
+in Section C, including the run logs.
+
+Quick manual cleanup (app closed): in Explorer, type %temp% and delete items
+named  xmind_*  mindmap_preview_*  playwright-*  wie_headless_*
+Skip anything Windows says is in use.
+
+
+==============================================================================
+TROUBLESHOOTING
+==============================================================================
+
+"Chromium isn't installed for Playwright -- run: playwright install chromium"
+(with a path inside _MEIxxxx\playwright\driver\package\.local-browsers)
+  -> The exe was built without the bundled browser, or the exe isn't pointed
+     at it (see the IMPORTANT note in B4). Redo Section B in order:
+     set PLAYWRIGHT_BROWSERS_PATH=0 -> playwright install chromium ->
+     delete build/dist/.spec -> rebuild.
+
+The exe starts very slowly
+  -> You used --onefile. Rebuild with --onedir (Section B4). If the first
+     launch is still slow, test by adding the dist folder to Windows Defender
+     exclusions.
+
+Icon problems
+  - The file must be a real .ico (not a renamed .png).
+  - Delete the old .spec file; it can override --icon.
+  - Use the full path to the .ico in the command.
+  - Copy the exe folder somewhere else to bypass Windows' icon cache.
+  - The exe file icon (--icon) and the window/taskbar icon (iconbitmap +
+    --add-data) are two separate things; you need both.
+
+Hundreds of chrome-headless-shell processes / PC slow after a long run
+  -> Install psutil (pip install psutil) and restart the app; it sweeps
+     orphaned browsers at startup.
+
+Updated Playwright with pip?
+  -> The browser folder name is tied to the Playwright version (for example
+     chromium-1234). After "pip install --upgrade playwright", redo
+     Section A2 (for the .py) and Section B2-B4 (for the exe).
+
+Where does each Chromium live?
+  Raw .py : %LOCALAPPDATA%\ms-playwright
+  Build   : ...\Python312\Lib\site-packages\playwright\driver\package\.local-browsers
+  Built exe: inside dist\M3-173\_internal\playwright\driver\package\.local-browsers
+  Profiles: C:\Users\<you>\.webpage_image_extractor  (shared by all of them)
+
+
+==============================================================================
+CHECKLISTS
+==============================================================================
+
+Run the .py  (first time)
+  [ ] pip install playwright (+ pillow matplotlib psutil fonttools if missing)
+  [ ] playwright install chromium
+  [ ] python M3-173.py
+  [ ] Browser Profiles -> Open Browser (surf) -> log in -> close the window
+
+Build and run the exe
+  [ ] confirm M3-173.py has the frozen browser-path + icon code (Section B4)
+  [ ] cd /d "F:\XMIND TTS SYSTEM\M3-173"
+  [ ] set PLAYWRIGHT_BROWSERS_PATH=0
+  [ ] playwright install chromium
+  [ ] delete build, dist, and any .spec file
+  [ ] run the pyinstaller command from B4
+  [ ] open dist\M3-173\M3-173.exe
+  [ ] Browser Profiles -> Open Browser (surf) -> log in -> close the window
+
+Occasional housekeeping
+  [ ] delete %temp%\xmind_* leftovers after a crash
+  [ ] delete old run logs in .webpage_image_extractor\*_auto_search_logs
